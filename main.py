@@ -1,86 +1,232 @@
-#!/usr/bin/env python3
-"""
-CLI ตัวสร้างชุดข้อมูล NLP
-
-สคริปต์นี้ให้อินเทอร์เฟซบรรทัดคำสั่งสำหรับสร้างชุดข้อมูลสังเคราะห์
-สำหรับงาน NLP ต่างๆ โดยใช้คลาส NLPDatasetGenerator
-"""
-
-import argparse
+import streamlit as st
 import os
-from dataset_generator import NLPDatasetGenerator
+import tempfile
+from typing import Optional, Dict, Any
+import pandas as pd
+import matplotlib.pyplot as plt
+
+from data_sources.text_source import TextDataSource, TextFormat
+from augmentation.text_augmenter import TextAugmenter
+from analysis.text_analyzer import TextAnalyzer
+
+def initialize_session_state():
+    """Initialize session state variables."""
+    if 'current_data' not in st.session_state:
+        st.session_state.current_data = None
+    if 'augmented_data' not in st.session_state:
+        st.session_state.augmented_data = None
+    if 'data_source' not in st.session_state:
+        st.session_state.data_source = None
+    if 'augmenter' not in st.session_state:
+        st.session_state.augmenter = None
+    if 'analyzer' not in st.session_state:
+        st.session_state.analyzer = None
+
+def render_data_upload() -> None:
+    """Render the data upload section."""
+    st.header("Data Upload")
+    
+    # File upload
+    uploaded_file = st.file_uploader(
+        "Choose a file",
+        type=['txt', 'csv', 'json'],
+        help="Upload your text data file"
+    )
+    
+    # Data format selection
+    format_options = {
+        "Plain Text": TextFormat.PLAIN,
+        "CoNLL Format": TextFormat.CONLL,
+        "JSON": TextFormat.JSON
+    }
+    selected_format = st.selectbox(
+        "Select data format",
+        options=list(format_options.keys())
+    )
+    
+    if uploaded_file is not None:
+        try:
+            # Save uploaded file to temporary location
+            with tempfile.NamedTemporaryFile(delete=False, suffix=uploaded_file.name) as tmp_file:
+                tmp_file.write(uploaded_file.getvalue())
+                
+                # Initialize data source
+                data_source = TextDataSource(format_options[selected_format])
+                
+                # Load data
+                data = data_source.load_data(tmp_file.name)
+                
+                # Store in session state
+                st.session_state.current_data = data
+                st.session_state.data_source = data_source
+                
+                # Preview data
+                st.subheader("Data Preview")
+                st.write(f"Number of samples: {len(data)}")
+                st.write("First few samples:")
+                for i, sample in enumerate(data[:5]):
+                    st.text(f"Sample {i + 1}:\n{sample}")
+                
+            # Clean up temporary file
+            os.unlink(tmp_file.name)
+            
+        except Exception as e:
+            st.error(f"Error loading data: {str(e)}")
+
+def render_augmentation_options() -> None:
+    """Render the augmentation options section."""
+    st.header("Augmentation Options")
+    
+    if st.session_state.current_data is None:
+        st.warning("Please upload data first.")
+        return
+    
+    # Initialize augmenter if needed
+    if st.session_state.augmenter is None:
+        st.session_state.augmenter = TextAugmenter()
+    
+    augmenter = st.session_state.augmenter
+    
+    # Get parameter info
+    param_info = augmenter.get_param_info()
+    
+    # Create input widgets for each parameter
+    params = {}
+    for param_name, info in param_info.items():
+        if info['type'] == 'float':
+            params[param_name] = st.slider(
+                info['description'],
+                min_value=float(info['range'][0]),
+                max_value=float(info['range'][1]),
+                value=augmenter.get_params().get(param_name, 0.0)
+            )
+        elif info['type'] == 'int':
+            params[param_name] = st.slider(
+                info['description'],
+                min_value=int(info['range'][0]),
+                max_value=int(info['range'][1]),
+                value=augmenter.get_params().get(param_name, 1)
+            )
+    
+    # Update augmenter parameters
+    augmenter.set_params(params)
+    
+    # Preview button
+    if st.button("Generate Preview"):
+        with st.spinner("Generating preview..."):
+            # Get first sample
+            sample = st.session_state.current_data[0]
+            
+            # Generate preview
+            preview_samples = augmenter.preview(sample, n_samples=3)
+            
+            st.subheader("Augmentation Preview")
+            st.write("Original:")
+            st.text(sample)
+            st.write("Augmented samples:")
+            for i, aug_sample in enumerate(preview_samples, 1):
+                st.text(f"{i}. {aug_sample}")
+    
+    # Augment button
+    if st.button("Augment Data"):
+        with st.spinner("Augmenting data..."):
+            augmented_samples = []
+            for sample in st.session_state.current_data:
+                augmented = augmenter.augment(sample)
+                augmented_samples.extend(augmented)
+            
+            st.session_state.augmented_data = augmented_samples
+            st.success(f"Generated {len(augmented_samples)} augmented samples!")
+
+def render_analysis() -> None:
+    """Render the analysis section."""
+    st.header("Data Analysis")
+    
+    # Initialize analyzer if needed
+    if st.session_state.analyzer is None:
+        st.session_state.analyzer = TextAnalyzer()
+    
+    analyzer = st.session_state.analyzer
+    
+    # Select data to analyze
+    data_options = []
+    if st.session_state.current_data is not None:
+        data_options.append("Original Data")
+    if st.session_state.augmented_data is not None:
+        data_options.append("Augmented Data")
+    if not data_options:
+        st.warning("No data available for analysis.")
+        return
+    
+    selected_data = st.selectbox(
+        "Select data to analyze",
+        options=data_options
+    )
+    
+    data = (st.session_state.current_data if selected_data == "Original Data"
+            else st.session_state.augmented_data)
+    
+    if st.button("Analyze"):
+        with st.spinner("Analyzing data..."):
+            # Calculate metrics
+            metrics = analyzer.calculate_metrics(data)
+            
+            # Generate visualizations
+            visualizations = analyzer.generate_visualizations(data)
+            
+            # Display metrics
+            st.subheader("Metrics")
+            metrics_df = pd.DataFrame([
+                {"Metric": name, "Value": value, "Description": analyzer.get_metric_descriptions()[name]}
+                for name, value in metrics.items()
+            ])
+            st.dataframe(metrics_df)
+            
+            # Display visualizations
+            st.subheader("Visualizations")
+            for name, fig in visualizations.items():
+                st.write(f"**{name}**")
+                st.pyplot(fig)
+
+def render_download() -> None:
+    """Render the download section."""
+    st.header("Download")
+    
+    if st.session_state.augmented_data is None:
+        st.warning("No augmented data available for download.")
+        return
+    
+    # Create download buttons
+    if st.download_button(
+        "Download Augmented Data (TXT)",
+        "\n".join(st.session_state.augmented_data),
+        "augmented_data.txt",
+        "text/plain"
+    ):
+        st.success("Download started!")
 
 def main():
-    parser = argparse.ArgumentParser(description="สร้างชุดข้อมูลสังเคราะห์สำหรับงาน NLP")
-    parser.add_argument(
-        "--task", 
-        type=str, 
-        choices=[
-            "text_classification", 
-            "token_classification", 
-            "question_answering", 
-            "summarization", 
-            "translation", 
-            "sentence_similarity",
-            "fill_mask", 
-            "zero_shot_classification", 
-            "text_generation", 
-            "text2text_generation", 
-            "table_qa", 
-            "feature_extraction", 
-            "all"
-        ],
-        default="all",
-        help="งาน NLP ที่ต้องการสร้างชุดข้อมูล (ค่าเริ่มต้น: all)"
-    )
-    parser.add_argument(
-        "--samples", 
-        type=int, 
-        default=500,
-        help="จำนวนตัวอย่างที่จะสร้างต่องาน (ค่าเริ่มต้น: 500)"
-    )
-    parser.add_argument(
-        "--output", 
-        type=str, 
-        default="generated_datasets",
-        help="ไดเรกทอรีผลลัพธ์สำหรับชุดข้อมูลที่สร้าง (ค่าเริ่มต้น: generated_datasets)"
-    )
+    """Main application."""
+    st.title("Data Augmentation System")
     
-    args = parser.parse_args()
+    # Initialize session state
+    initialize_session_state()
     
-    # สร้างตัวสร้างชุดข้อมูล
-    generator = NLPDatasetGenerator(output_dir=args.output)
+    # Create tabs
+    tabs = st.tabs(["Upload", "Augment", "Analyze", "Download"])
     
-    # สร้างชุดข้อมูลที่ระบุ
-    if args.task == "all":
-        generator.generate_all_datasets(samples_per_task=args.samples)
-    elif args.task == "text_classification":
-        generator.generate_text_classification(num_samples=args.samples)
-    elif args.task == "token_classification":
-        generator.generate_token_classification(num_samples=args.samples)
-    elif args.task == "question_answering":
-        generator.generate_question_answering(num_samples=args.samples)
-    elif args.task == "summarization":
-        generator.generate_summarization(num_samples=args.samples)
-    elif args.task == "translation":
-        generator.generate_translation(num_samples=args.samples)
-    elif args.task == "sentence_similarity":
-        generator.generate_sentence_similarity(num_samples=args.samples)
-    elif args.task == "fill_mask":
-        generator.generate_fill_mask(num_samples=args.samples)
-    elif args.task == "zero_shot_classification":
-        generator.generate_zero_shot_classification(num_samples=args.samples)
-    elif args.task == "text_generation":
-        generator.generate_text_generation(num_samples=args.samples)
-    elif args.task == "text2text_generation":
-        generator.generate_text2text_generation(num_samples=args.samples)
-    elif args.task == "table_qa":
-        generator.generate_table_qa(num_samples=args.samples)
-    elif args.task == "feature_extraction":
-        generator.generate_feature_extraction(num_samples=args.samples)
+    # Render each section in its tab
+    with tabs[0]:
+        render_data_upload()
     
-    print(f"สร้างชุดข้อมูลสำหรับ'{args.task}' สำเร็จ!")
-    print(f"บันทึกผลลัพธ์ไปที่: {os.path.abspath(args.output)}")
+    with tabs[1]:
+        render_augmentation_options()
+    
+    with tabs[2]:
+        render_analysis()
+    
+    with tabs[3]:
+        render_download()
 
 if __name__ == "__main__":
     main()
