@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-NLP Dataset Generator CLI
+CLI ตัวสร้างชุดข้อมูล NLP
 
-This script provides a command-line interface to generate synthetic datasets 
-for various NLP tasks using the NLPDatasetGenerator class.
+สคริปต์นี้ให้อินเทอร์เฟซบรรทัดคำสั่งสำหรับสร้างชุดข้อมูลสังเคราะห์
+สำหรับงาน NLP ต่างๆ โดยใช้คลาส NLPDatasetGenerator
 """
 
 import argparse
@@ -11,7 +11,7 @@ import os
 from dataset_generator import NLPDatasetGenerator
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate synthetic datasets for NLP tasks")
+    parser = argparse.ArgumentParser(description="สร้างชุดข้อมูลสังเคราะห์สำหรับงาน NLP")
     parser.add_argument(
         "--task", 
         type=str, 
@@ -31,27 +31,27 @@ def main():
             "all"
         ],
         default="all",
-        help="NLP task to generate a dataset for (default: all)"
+        help="งาน NLP ที่ต้องการสร้างชุดข้อมูล (ค่าเริ่มต้น: all)"
     )
     parser.add_argument(
         "--samples", 
         type=int, 
         default=500,
-        help="Number of samples to generate per task (default: 500)"
+        help="จำนวนตัวอย่างที่จะสร้างต่องาน (ค่าเริ่มต้น: 500)"
     )
     parser.add_argument(
         "--output", 
         type=str, 
         default="generated_datasets",
-        help="Output directory for generated datasets (default: generated_datasets)"
+        help="ไดเรกทอรีผลลัพธ์สำหรับชุดข้อมูลที่สร้าง (ค่าเริ่มต้น: generated_datasets)"
     )
     
     args = parser.parse_args()
     
-    # Create the dataset generator
+    # สร้างตัวสร้างชุดข้อมูล
     generator = NLPDatasetGenerator(output_dir=args.output)
     
-    # Generate the specified dataset(s)
+    # สร้างชุดข้อมูลที่ระบุ
     if args.task == "all":
         generator.generate_all_datasets(samples_per_task=args.samples)
     elif args.task == "text_classification":
@@ -79,8 +79,8 @@ def main():
     elif args.task == "feature_extraction":
         generator.generate_feature_extraction(num_samples=args.samples)
     
-    print(f"Dataset generation for '{args.task}' completed successfully!")
-    print(f"Output saved to: {os.path.abspath(args.output)}")
+    print(f"สร้างชุดข้อมูลสำหรับ'{args.task}' สำเร็จ!")
+    print(f"บันทึกผลลัพธ์ไปที่: {os.path.abspath(args.output)}")
 
 if __name__ == "__main__":
     main()

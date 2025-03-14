@@ -1,91 +1,107 @@
+Below is a markdown file for your repository "datasetnlpgeneratezombitx64" that describes the project and its usage. You can adjust as needed.
+
+```markdown name=README.md
 # datasetnlpgeneratezombitx64
 generate dataset for nlp
-# NLP Dataset Generator
+# ตัวสร้างชุดข้อมูล NLP
 
-This repository contains tools for generating synthetic datasets for various NLP tasks. The generator creates datasets in the Hugging Face Datasets format, making them ready for use with the 🤗 Transformers library.
+ที่เก็บนี้มีเครื่องมือสำหรับสร้างชุดข้อมูลสังเคราะห์สำหรับงาน NLP ต่างๆ ตัวสร้างจะสร้างชุดข้อมูลในรูปแบบ Hugging Face Datasets ทำให้พร้อมใช้งานกับไลบรารี 🤗 Transformers
 
-## Features
+## คุณสมบัติ
 
-Generate synthetic datasets for the following NLP tasks:
+สร้างชุดข้อมูลสังเคราะห์สำหรับงาน NLP ต่อไปนี้:
 
-- Text Classification
-- Token Classification (NER)
-- Question Answering
-- Summarization
-- Translation
-- Sentence Similarity
-- Fill-Mask
-- Zero-Shot Classification
-- Text Generation
-- Text2Text Generation
-- Table Question Answering
-- Feature Extraction
+- การจัดประเภทข้อความ
+- การจัดประเภทโทเค็น (NER) 
+- การตอบคำถาม
+- การสรุปความ
+- การแปลภาษา
+- ความคล้ายคลึงของประโยค
+- การเติมคำที่ถูกปิดบัง
+- การจัดประเภทแบบ Zero-Shot
+- การสร้างข้อความ
+- การสร้างข้อความแบบ Text2Text
+- การตอบคำถามจากตาราง
+- การสกัดคุณลักษณะ
 
-## Installation
+## การติดตั้ง
 
-1. Clone this repository:
+1. โคลนที่เก็บนี้:
 ```bash
 git clone https://github.com/JonusNattapong/datasetnlpgeneratezombitx64.git
 cd datasetnlpgeneratezombitx64
 ```
 
-2. Install the required Python packages:
+2. ติดตั้งแพ็คเกจ Python ที่จำเป็น:
 ```bash
 pip install -r requirements.txt
 ```
 
-## Usage
+## การใช้งาน
 
-To generate datasets, run the `main.py` script with the desired task and options.
+เรียกใช้สคริปต์ `main.py` พร้อมงานและตัวเลือกที่ต้องการ
 
 ```bash
-# Generate all datasets (default)
+# สร้างชุดข้อมูลทั้งหมด (ค่าเริ่มต้น)
 python main.py
 
-# Generate a specific dataset type
+# สร้างชุดข้อมูลเฉพาะประเภท
 python main.py --task text_classification
 
-# Specify the number of samples
+# ระบุจำนวนตัวอย่าง
 python main.py --task question_answering --samples 1000
 
-# Specify output directory
+# ระบุไดเรกทอรีผลลัพธ์
 python main.py --output my_datasets
-
 ```
 
-## Using as a Library
-You can also use the dataset generator in your own code:
+## การสร้างชุดข้อมูลภาษาไทย
+
+หากต้องการสร้างชุดข้อมูลภาษาไทย ให้ใช้ตัวเลือก `--task translation` และตรวจสอบให้แน่ใจว่าได้เพิ่มคู่ภาษา `("en", "th")` แล้ว ตัวอย่างเช่น:
+
+```bash
+python main.py --task translation
+```
+
+นอกจากนี้ คุณสามารถแก้ไขเทมเพลตใน `dataset_generator.py` เพื่อเพิ่มตัวอย่างภาษาไทยในงานอื่นๆ เช่น `text_classification`, `sentence_similarity` และ `fill_mask`
+
+## การใช้งานเป็นไลบรารี
+
+คุณสามารถใช้ตัวสร้างชุดข้อมูลในโค้ดของคุณเองได้:
 ```python
 from dataset_generator import NLPDatasetGenerator
 
-# Initialize the generator
+# เริ่มต้นตัวสร้าง
 generator = NLPDatasetGenerator(output_dir="my_datasets")
 
-# Generate specific datasets
+# สร้างชุดข้อมูลเฉพาะ
 classification_dataset = generator.generate_text_classification(num_samples=500)
 qa_dataset = generator.generate_question_answering(num_samples=300)
 
-# Generate all datasets
+# สร้างชุดข้อมูลทั้งหมด
 generator.generate_all_datasets(samples_per_task=500)
 ```
 
-## Example Datasets
+## ตัวอย่างชุดข้อมูล
 
-Text Classification
+### การจัดประเภทข้อความ
 ```python
 {
-  "text": "This is a positive review about the movie.",
+  "text": "นี่คือรีวิวเชิงบวกเกี่ยวกับภาพยนตร์",
   "label": 0
 }
 ```
-Question Answering
+
+### การตอบคำถาม
 ```python
 {
-  "context": "The capital of France is Paris. It is known for landmarks such as the Eiffel Tower.",
-  "question": "What is the capital of France?",
-  "answers": {"text": "Paris", "answer_start": 23}
+  "context": "เมืองหลวงของฝรั่งเศสคือปารีส เป็นที่รู้จักกันดีในเรื่องสถานที่สำคัญเช่นหอไอเฟล",
+  "question": "อะไรคือเมืองหลวงของฝรั่งเศส?",
+  "answers": {"text": "ปารีส", "answer_start": 23}
 }
 ```
 
-## Customization
-You can customize the dataset generation by modifying the templates in dataset_generator.py. The code is designed to be easily extendable for additional examples or task types.
+## การปรับแต่ง
+
+คุณสามารถปรับแต่งการสร้างชุดข้อมูลโดยแก้ไขเทมเพลตใน `dataset_generator.py` โค้ดถูกออกแบบมาให้ขยายสำหรับตัวอย่างหรือประเภทงานเพิ่มเติมได้ง่าย
+``` 
