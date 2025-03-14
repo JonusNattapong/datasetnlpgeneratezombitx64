@@ -19,10 +19,17 @@ This script provides utilities to generate synthetic datasets for various NLP ta
 import os
 import json
 import random
+import asyncio
 import pandas as pd
 import numpy as np
 from datasets import Dataset, DatasetDict, Features, Value, ClassLabel, Sequence
 from datasets import Audio, Image
+from typing import List, Optional, Dict, Any
+from dotenv import load_dotenv
+from ai_service import AIServiceConfig, AIServiceManager
+
+# Load environment variables
+load_dotenv()
 
 # Set random seed for reproducibility
 random.seed(42)
@@ -39,6 +46,16 @@ class ThaiNLPDatasetGenerator:
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
         
+        # Initialize AI services
+        self.ai_config = AIServiceConfig()
+        self.ai_manager = AIServiceManager(self.ai_config)
+        
+    async def generate_with_ai(self, prompt: str, services: List[str] = None) -> Optional[str]:
+        """Generate text using AI services with fallback."""
+        if services is None:
+            services = ["mistral", "deepseek", "huggingface", "ollama"]
+        return await self.ai_manager.generate_with_fallback(prompt, services)
+        
     def save_dataset(self, dataset, name):
         """Save the dataset to disk and/or push to Hub."""
         # Save locally
@@ -53,7 +70,7 @@ class ThaiNLPDatasetGenerator:
             
         print(f"Dataset '{name}' saved to {dataset_path}")
         
-    def generate_text_classification(self, num_samples=1000, num_classes=3, class_names=None):
+    async def generate_text_classification(self, num_samples=1000, num_classes=3, class_names=None):
         """
         Generate a dataset for text classification with a focus on Thai language examples.
         
@@ -105,8 +122,20 @@ class ThaiNLPDatasetGenerator:
         for _ in range(num_samples):
             label = random.randint(0, num_classes-1)
             topic = random.choice(topics)
-            template = random.choice(templates[min(label, len(templates)-1)])
-            text = template.replace("{topic}", topic)
+            
+            # Try to use AI for more natural text generation
+            prompt = f"Generate a {class_names[label]} review in Thai language about {topic}. Keep it natural and concise."
+            try:
+                text = await self.generate_with_ai(prompt)
+                if not text:
+                    # Fallback to template-based generation
+                    template = random.choice(templates[min(label, len(templates)-1)])
+                    text = template.replace("{topic}", topic)
+            except:
+                # Fallback to template-based generation
+                template = random.choice(templates[min(label, len(templates)-1)])
+                text = template.replace("{topic}", topic)
+                
             texts.append(text)
             labels.append(label)
             
@@ -727,7 +756,11 @@ class ThaiNLPDatasetGenerator:
         
         print("สร้างชุดข้อมูลทั้งหมดสำเร็จ!")
 
+async def generate_datasets():
+    """Helper function to run async dataset generation"""
+    generator = ThaiNLPDatasetGenerator()
+    await generator.generate_all_datasets(samples_per_task=100)
+
 # Example usage:
 if __name__ == "__main__":
-    generator = ThaiNLPDatasetGenerator()
-    generator.generate_all_datasets(samples_per_task=100)
+    asyncio.run(generate_datasets())
