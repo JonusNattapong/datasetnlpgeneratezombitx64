@@ -45,16 +45,11 @@ def main():
         default="generated_datasets",
         help="Output directory for generated datasets (default: generated_datasets)"
     )
-    parser.add_argument(
-        "--verbose", 
-        action="store_true", 
-        help="Enable verbose logging"
-    )
     
     args = parser.parse_args()
     
     # Create the dataset generator
-    generator = NLPDatasetGenerator(output_dir=args.output, verbose=args.verbose)
+    generator = NLPDatasetGenerator(output_dir=args.output)
     
     # Generate the specified dataset(s)
     if args.task == "all":
