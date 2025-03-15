@@ -4,6 +4,26 @@ import tempfile
 from typing import Optional, Dict, Any
 import pandas as pd
 import matplotlib.pyplot as plt
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Access environment variables with defaults
+DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "mistral-7b")
+BATCH_SIZE = int(os.getenv("BATCH_SIZE", "32"))
+
+# Mistral API configuration
+MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
+MISTRAL_API_ENDPOINT = os.getenv("MISTRAL_API_ENDPOINT", "https://api.mistral.ai/v1")
+MAX_SEQUENCE_LENGTH = int(os.getenv("MAX_SEQUENCE_LENGTH", "512"))
+DATA_DIR = os.getenv("DATA_DIR", "./data")
+OUTPUT_DIR = os.getenv("OUTPUT_DIR", "./output")
+CACHE_DIR = os.getenv("CACHE_DIR", "./cache")
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+LOG_FILE = os.getenv("LOG_FILE", "app.log")
+NUM_WORKERS = int(os.getenv("NUM_WORKERS", "4"))
+USE_GPU = os.getenv("USE_GPU", "true").lower() == "true"
 
 from data_sources.text_source import TextDataSource, TextFormat
 from augmentation.text_augmenter import TextAugmenter

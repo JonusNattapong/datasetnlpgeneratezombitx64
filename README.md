@@ -61,6 +61,28 @@ pip install -r requirements.txt
 python -c "import nltk; nltk.download('wordnet'); nltk.download('punkt'); nltk.download('averaged_perceptron_tagger')"
 ```
 
+5. ตั้งค่า Environment Variables:
+```bash
+# คัดลอกไฟล์ตัวอย่าง .env
+cp .env.example .env
+
+# แก้ไขไฟล์ .env ตามความต้องการ
+```
+
+Environment variables ที่สามารถกำหนดได้:
+- `MISTRAL_API_KEY`: API key สำหรับ Mistral AI (required)
+- `MISTRAL_API_ENDPOINT`: Endpoint ของ Mistral AI API (default: "https://api.mistral.ai/v1")
+- `DEFAULT_MODEL`: โมเดลเริ่มต้น (default: "mistral-7b")
+- `BATCH_SIZE`: ขนาด batch สำหรับการประมวลผล (default: 32)
+- `MAX_SEQUENCE_LENGTH`: ความยาวสูงสุดของ sequence (default: 512)
+- `DATA_DIR`: ไดเร็กทอรีสำหรับเก็บข้อมูล (default: "./data")
+- `OUTPUT_DIR`: ไดเร็กทอรีสำหรับผลลัพธ์ (default: "./output")
+- `CACHE_DIR`: ไดเร็กทอรีสำหรับ cache (default: "./cache")
+- `LOG_LEVEL`: ระดับการบันทึก log (default: "INFO")
+- `LOG_FILE`: ชื่อไฟล์ log (default: "app.log")
+- `NUM_WORKERS`: จำนวน worker สำหรับการประมวลผลแบบขนาน (default: 4)
+- `USE_GPU`: เปิดใช้งาน GPU หรือไม่ (default: true)
+
 ## วิธีการใช้งาน
 
 ### 1. เริ่มต้นใช้งานระบบ
